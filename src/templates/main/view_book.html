@@ -59,7 +59,7 @@
 
                                 <a href="{{ url_for('main.export_xml', book_id=book.id) }}"
                                    class="btn btn-primary-custom">
-                                    გადმოწერა
+                                    XML {{ utils.load_svg('download.svg', 17, 17) | safe }}
                                 </a>
 
                             </div>
@@ -129,7 +129,7 @@
 
                     <label for="grammarTags" class="text-primary-custom">
                         {{ utils.load_svg("tag.svg", 11, 11) | safe }}
-                        გრამატიკული თეგები
+                        მორფოლოგიური თეგები
                     </label>
                     <input class="form-control-custom mt-1 mb-3" name="grammarTags" id="grammarTags">
 

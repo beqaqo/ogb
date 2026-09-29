@@ -40,9 +40,9 @@ for (let word of words) {
         const content = [];
         if (word.dataset.lemma) content.push(`<strong>ლემა:</strong> ${word.dataset.lemma}`);
         if (word.dataset.grammar) content.push(`<strong>თეგები:</strong> ${word.dataset.grammar}`);
-        if (word.dataset.greek) content.push(`<strong>ბერძნული:</strong> ${word.dataset.greek}`);
-        if (word.dataset.english) content.push(`<strong>ინგლისური:</strong> ${word.dataset.english}`);
-        if (word.dataset.armenian) content.push(`<strong>სომხური:</strong> ${word.dataset.armenian}`);
+        if (word.dataset.greek) content.push(`<strong>ბერძ.:</strong> ${word.dataset.greek}`);
+        if (word.dataset.armenian) content.push(`<strong>სომხ.:</strong> ${word.dataset.armenian}`);
+        if (word.dataset.english) content.push(`<strong>ინგ.:</strong> ${word.dataset.english}`);
 
         tooltip.innerHTML = content.join("<br>");
         document.body.appendChild(tooltip);
