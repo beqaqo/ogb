@@ -13,12 +13,25 @@ a {
   text-decoration: none;
 }
 
+.link {
+  color: #6a3a2a;
+  text-decoration: none;
+}
+
+.link:hover, .link:focus {
+  text-decoration: underline;
+}
+
 .bg-primary-custom {
   background-color: #6a3a2a !important;
 }
 
 .text-primary-custom {
   color: #6a3a2a !important;
+}
+
+.text-bold {
+  font-weight: bold;
 }
 
 .table-primary-custom td, .table-primary-custom th {
