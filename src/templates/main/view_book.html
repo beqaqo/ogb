@@ -34,34 +34,41 @@
 
         <div class="col">
             <div class="row g-0">
-                {% set has_details = book.details != None %}
+                {% set has_details = book.additional_details != '' %}
                 <div class="accordion accordion-flush" id="bookDetails">
                     <div class="accordion-item">
-                        <h2 class="accordion-header">
+                        <h2 class="accordion-header d-flex align-items-center bg-secondary-custom border-bottom border-primary-muted">
                             {% if has_details %}
-                                <button class="accordion-button collapsed bg-secondary-custom border-bottom border-primary-muted text-primary-dark-custom shadow-none"
+                                <button class="accordion-button collapsed w-auto bg-transparent text-primary-dark-custom shadow-none"
                                         type="button"
                                         data-bs-toggle="collapse"
                                         data-bs-target="#bookDetailsCollapsed">
                                     <b>{{ book.title }}</b>
                                 </button>
+
+                                <a href="{{ url_for('main.export_xml', book_id=book.id) }}"
+                                   class="btn btn-primary-custom ms-2 d-flex align-items-center gap-1">
+                                    XML {{ utils.load_svg('download.svg', 17, 17) | safe }}
+                                </a>
                             {% else %}
-                                <button class="accordion-button hidden bg-secondary-custom border-bottom border-primary-muted text-primary-dark-custom shadow-none">
+                                <button class="accordion-button hidden w-auto bg-transparent text-primary-dark-custom shadow-none"
+                                        type="button">
                                     <b>{{ book.title }}</b>
                                 </button>
+
+                                <a href="{{ url_for('main.export_xml', book_id=book.id) }}"
+                                   class="btn btn-primary-custom ms-2 d-flex align-items-center gap-1">
+                                    XML {{ utils.load_svg('download.svg', 17, 17) | safe }}
+                                </a>
                             {% endif %}
                         </h2>
-                        <div id="bookDetailsCollapsed" class="accordion-collapse collapse"
+
+                        <div id="bookDetailsCollapsed"
+                             class="accordion-collapse collapse"
                              data-bs-parent="#bookDetails">
                             <div class="accordion-body border-bottom border-primary-muted bg-secondary-custom opacity-20">
                                 {{ book.additional_details | safe }}
                                 <br><br>
-
-                                <a href="{{ url_for('main.export_xml', book_id=book.id) }}"
-                                   class="btn btn-primary-custom">
-                                    XML {{ utils.load_svg('download.svg', 17, 17) | safe }}
-                                </a>
-
                             </div>
                         </div>
                     </div>
