@@ -12,12 +12,12 @@ class InlineNote(InlineFormAdmin):
     form_excluded_columns = ('date_created', 'date_modified')
 
 class ParagraphView(SecureModelView):
-    can_delete = False
+    can_delete = True
 
     column_list = ("book", "chapter_number", "index", "text", "greek_text")
     column_searchable_list = ("text", "greek_text")
 
-    form_columns = ("index", "chapter_number", "text", "greek_text", "notes", "old_text")
+    form_columns = ("book", "index", "chapter_number", "text", "greek_text", "notes", "old_text")
     form_extra_fields = {"old_text": StringField("")}
     form_widget_args = {"old_text": {"style": "display: none"}}
 
@@ -29,19 +29,22 @@ class ParagraphView(SecureModelView):
     def on_model_change(self, form, model, is_created):
         model.date_modified = datetime.now()
         if form.text.data != form.old_text.data:
-            for word in model.words:
-                self.session.delete(word)
+            for idx, raw_word in enumerate(model.text.split()):
+                clean_word = remove_trailing_spaces(remove_punctuation(raw_word))
+                new_word = Word(position=idx, text=clean_word)
 
-            words = model.text.split()
-            for idx, word in enumerate(words):
-                clean_word = remove_trailing_spaces(remove_punctuation(word))
-                new_word = Word(paragraph_id=model.id, position=idx, text=clean_word)
-                similar_word = Word.query.filter(Word.text == new_word.text,
-                                                 Word.greek_text != None,
-                                                 Word.english_text != None,
-                                                 Word.armenian_text != None,
-                                                 Word.lemma != None,
-                                                 Word.grammar != None).order_by(Word.id.desc()).first()
+                similar_word = (
+                    Word.query.filter(
+                        Word.text == clean_word,
+                        Word.greek_text != None,
+                        Word.english_text != None,
+                        Word.armenian_text != None,
+                        Word.lemma != None,
+                        Word.grammar != None,
+                    )
+                    .order_by(Word.id.desc())
+                    .first()
+                )
 
                 if similar_word:
                     new_word.greek_text = similar_word.greek_text
@@ -49,4 +52,5 @@ class ParagraphView(SecureModelView):
                     new_word.armenian_text = similar_word.armenian_text
                     new_word.lemma = similar_word.lemma
                     new_word.grammar = similar_word.grammar
-                self.session.add(new_word)
+
+                model.words.append(new_word)
