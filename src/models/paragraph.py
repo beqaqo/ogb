@@ -15,7 +15,7 @@ class Paragraph(BaseModel):
     greek_text = db.Column(db.String, nullable=False)
 
     book = db.relationship('Book', back_populates='paragraphs', lazy=True, uselist=False)
-    words = db.relationship('Word', back_populates='paragraph', lazy=True, order_by='Word.position')
+    words = db.relationship('Word', back_populates='paragraph', lazy=True, order_by='Word.position', cascade='all, delete-orphan')
     notes = db.relationship('Note', back_populates='paragraph', lazy=True)
 
 
