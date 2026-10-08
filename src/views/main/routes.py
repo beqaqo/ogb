@@ -16,20 +16,39 @@ def index():
     books = Book.query.all()
     return render_template("main/index.html", books=books)
 
+from sqlalchemy import and_
+from sqlalchemy.orm import selectinload
+
 @main_bp.route('/search')
 def search():
-    query = request.args.get('q', '').strip()
-    results = []
-    
-    if query:
-        results = Paragraph.query.filter(
-            or_(
-                Paragraph.text.ilike(f'% {query} %'),
-                Paragraph.greek_text.ilike(f'% {query} %')
-            )
-        ).all()
-    
-    return render_template("main/search_results.html", query=query, results=results)
+    q_word = request.args.get('q_word', '').strip()
+    q_lemma = request.args.get('q_lemma', '').strip()
+    q_translation = request.args.get('q_translation', '').strip()
+    q_grammar = request.args.get('q_grammar', '').strip()
+
+    results = None
+
+    if any([q_word, q_lemma, q_translation, q_grammar]):
+        query = Paragraph.query
+
+        if q_word:
+            query = query.filter(Paragraph.text.ilike(f'%{q_word}%'))
+
+        if q_translation:
+            query = query.filter(Paragraph.greek_text.ilike(f'%{q_translation}%'))
+
+        word_conditions = []
+        if q_lemma:
+            word_conditions.append(Word.lemma.ilike(f'%{q_lemma}%'))
+        if q_grammar:
+            word_conditions.append(Word.grammar.ilike(f'%{q_grammar}%'))
+
+        if word_conditions:
+            query = query.filter(Paragraph.words.any(and_(*word_conditions)))
+
+        results = query.options(selectinload(Paragraph.words)).all()
+
+    return render_template("main/search_results.html", results=results, query=q_word)
 
 @main_bp.route('/book')
 @main_bp.route("/book/<int:book_id>")

@@ -1,80 +1,97 @@
 {% extends "base.html" %}
 
 {% block body %}
-    <div class="container mt-3">
-        <form class="d-flex mb-3 w-100" role="search" method="GET" action="{{ url_for('main.search') }}">
-            <input class="form-control me-2" type="search" placeholder="გრამატიკული ფორმით ძიება" name="q_word"/>
-            <input class="form-control me-2" type="search" placeholder="ლემით ძიება" name="q_lema"/>
-            <input class="form-control me-2" type="search" placeholder="მორფოლოგიური თეგით ძიება" name="q_tag"/>
-            <input class="form-control me-2" type="search" placeholder="თარგმანებით ძიება" name="q_translation"/>
-            <button class="btn btn-primary-custom" type="submit">ძიება</button>
-        </form>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h2 class="mb-4">ძიების შედეგები</h2>
-
-                {% if query %}
-                    <p class="text-muted mb-4">
-                        ნაპოვნია <strong>{{ results|length }}</strong> შედეგი</strong>
-                    </p>
-                {% else %}
-                    <p class="text-muted">გთხოვთ მიუთითოთ საძიებო ტექსტი.</p>
-                {% endif %}
-
-                {% if results %}
-                    <div class="row">
-                        {% for paragraph in results %}
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-subtitle mb-3 text-primary-custom">
-                                            <strong>{{ paragraph.book.title }}</strong> -
-                                            თავი {{ paragraph.chapter_number }}, პარაგრაფი {{ paragraph.index }}
-                                        </h6>
-
-                                        <p class="card-text small">
-                                            {% set highlighted_text = paragraph.text %}
-                                            {% for match in paragraph.text.split() %}
-                                                {% if query.lower() == match.lower() %}
-                                                    <mark>{{ match }}</mark>
-                                                {% else %}
-                                                    {{ match }}
-                                                {% endif %}
-                                                {% if not loop.last %} {% endif %}
-                                            {% endfor %}
-                                        </p>
-
-                                        {% if paragraph.greek_text %}
-                                            <p class="card-text small text-muted">
-                                                <em>{{ paragraph.greek_text[:100] }}
-                                                    {% if paragraph.greek_text|length > 100 %}...{% endif %}</em>
-                                            </p>
-                                        {% endif %}
-                                    </div>
-                                    <div class="card-footer bg-transparent">
-                                        <a href="{{ url_for('main.view_book', book_id=paragraph.book_id, chapter_number=paragraph.chapter_number) }}"
-                                           class="btn btn-sm btn-primary-custom">
-                                            წიგნზე გადასვლა →
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% elif query %}
-                    <div class="alert alert-info" role="alert">
-                        "<strong>{{ query }}</strong>"-სთვის შედეგები ვერ მოიძებნა.
-                        გთხოვთ სცადოთ სხვა საძიებო ტერმინი
-                    </div>
-                {% endif %}
-
-                {#            <div class="my-4">#}
-                {#                <a href="{{ url_for('main.index') }}" class="btn btn-primary-custom">#}
-                {#                    ← უკან დაბრუნება#}
-                {#                </a>#}
-                {#            </div>#}
+<div class="container mt-3">
+    <div class="row">
+        <aside class="col-12 col-lg-3 mb-4">
+            <div class="card border border-primary-muted rounded bg-secondary-custom-light shadow-sm sticky-lg-top"
+                style="top: 1rem;">
+                <div class="card-body">
+                    <form role="search" method="GET" action="{{ url_for('main.search') }}">
+                        <div class="mb-3">
+                            <label for="q_word" class="form-label small mb-1">გრამატიკული ფორმა</label>
+                            <input id="q_word" class="form-control-custom" type="search" name="q_word"
+                                value="{{ request.args.get('q_word', '') }}" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="q_lemma" class="form-label small mb-1">ლემა</label>
+                            <input id="q_lemma" class="form-control-custom" type="search" name="q_lemma"
+                                value="{{ request.args.get('q_lemma', '') }}" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="q_grammar" class="form-label small mb-1">მორფოლოგიური თეგი</label>
+                            <input id="q_grammar" class="form-control-custom" type="search" name="q_grammar"
+                                value="{{ request.args.get('q_grammar', '') }}" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="q_translation" class="form-label small mb-1">თარგმანი</label>
+                            <input id="q_translation" class="form-control-custom" type="search" name="q_translation"
+                                value="{{ request.args.get('q_translation', '') }}" />
+                        </div>
+                        <button class="btn btn-primary-custom w-100" type="submit">ძიება</button>
+                    </form>
+                </div>
             </div>
-        </div>
+        </aside>
+
+        <!-- Results -->
+        <main class="col-12 col-lg-9">
+            <h2 class="mb-4">ძიების შედეგები</h2>
+
+            {% if results is none %}
+            <p class="text-muted">გთხოვთ მიუთითოთ საძიებო ტექსტი.</p>
+            {% else %}
+            <p class="text-muted mb-4">
+                ნაპოვნია <strong>{{ results|length }}</strong> შედეგი
+            </p>
+            {% endif %}
+
+            {% if results %}
+            <div class="row">
+                {% for paragraph in results %}
+                <div class="col-md-10 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3 text-primary-custom">
+                                <strong>{{ paragraph.book.title }}</strong> -
+                                თავი {{ paragraph.chapter_number }}, პარაგრაფი {{ paragraph.index }}
+                            </h6>
+
+                            <p class="card-text small">
+                                {% for match in paragraph.text.split() %}
+                                {% if query and query.lower() in match.lower() %}
+                                <mark>{{ match }}</mark>
+                                {% else %}
+                                {{ match }}
+                                {% endif %}
+                                {% if not loop.last %} {% endif %}
+                                {% endfor %}
+                            </p>
+
+                            {% if paragraph.greek_text %}
+                            <p class="card-text small text-muted">
+                                <em>{{ paragraph.greek_text[:100] }}
+                                    {% if paragraph.greek_text|length > 100 %}...{% endif %}</em>
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a href="{{ url_for('main.view_book', book_id=paragraph.book_id, chapter_number=paragraph.chapter_number) }}"
+                                class="btn btn-sm btn-primary-custom">
+                                წიგნზე გადასვლა →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif results is not none %}
+            <div class="alert alert-info" role="alert">
+                შედეგები ვერ მოიძებნა. გთხოვთ სცადოთ სხვა საძიებო ტერმინი
+            </div>
+            {% endif %}
+        </main>
+
     </div>
+</div>
 {% endblock %}
