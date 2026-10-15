@@ -3,3 +3,61 @@
         active
     {% endif %}
 {% endmacro %}
+
+{% macro offcanvas_word() %}
+<div class="offcanvas offcanvas-end word-details" tabindex="-1" id="wordDetailsDrawer"
+        aria-labelledby="wordDetailsLabel" data-bs-backdrop="false" data-bs-scroll="true">
+
+        <div class="offcanvas-header align-items-start border-bottom border-primary-muted">
+            <div>
+                <h5 class="offcanvas-title" id="wordDetailsLabel">სიტყვის დეტალები</h5>
+                <span id="selectedWord">სიტყვა</span>
+            </div>
+            <button class="btn px-2 py-1 btn-close-details" id="closeDetailsBtn" data-bs-dismiss="offcanvas"
+                aria-label="Close">
+                {{ utils.load_svg("crossmark.svg", 16, 16) | safe }}
+            </button>
+        </div>
+
+        <div class="offcanvas-body">
+            <label for="lemma" class="text-primary-custom">
+                {{ utils.load_svg("book.svg", 11, 11) | safe }}
+                ლემა
+            </label>
+            <input class="form-control-custom mt-1 mb-3" name="lemma" id="lemma">
+
+            <label for="grammarTags" class="text-primary-custom">
+                {{ utils.load_svg("tag.svg", 11, 11) | safe }}
+                მორფოლოგიური თეგები
+            </label>
+            <input class="form-control-custom mt-1 mb-3" name="grammarTags" id="grammarTags">
+
+            <label for="greekText" class="text-primary-custom">
+                {{ utils.load_svg("translate.svg", 11, 11) | safe }}
+                ბერძნული თარგმანი
+            </label>
+            <input class="form-control-custom mt-1 mb-3" name="greekText" id="greekText">
+
+            <label for="armenianText" class="text-primary-custom">
+                {{ utils.load_svg("translate.svg", 11, 11) | safe }}
+                სომხური თარგმანი
+            </label>
+            <input class="form-control-custom mt-1 mb-3" name="armenianText" id="armenianText">
+
+            <label for="georgianText" class="text-primary-custom">
+                {{ utils.load_svg("translate.svg", 11, 11) | safe }}
+                ინგლისური თარგმანი
+            </label>
+            <input class="form-control-custom mt-1 mb-3" name="georgianText" id="georgianText">
+
+            {% if current_user.is_authenticated %}
+            <button type="button" id="autoFill" name="autoFill" class="btn btn-primary-custom">
+                შევსება
+            </button>
+            <button type="button" id="save" name="save" class="btn btn-primary-custom">
+                შენახვა
+            </button>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}

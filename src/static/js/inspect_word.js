@@ -1,4 +1,6 @@
-const detailsBar = document.getElementsByClassName("word-details")[0]
+const drawerEl = document.getElementById("wordDetailsDrawer")
+const drawer = bootstrap.Offcanvas.getOrCreateInstance(drawerEl)
+const detailsBar = document.getElementsByClassName("word-details")[0] // TODO: should remove this
 
 const selectedWord = document.getElementById("selectedWord")
 const lemmaInput = document.getElementById("lemma")
@@ -6,28 +8,35 @@ const grammarInput = document.getElementById("grammarTags")
 const greekInput = document.getElementById("greekText")
 const armenianInput = document.getElementById("armenianText")
 const englishInput = document.getElementById("georgianText")
-
-
 const words = document.getElementsByClassName("paragraph-word")
 
 let currentlySelectedId = null;
 let activeTooltip = null;
 for (let word of words) {
     word.addEventListener("click", () => {
-        if (detailsBar.classList.contains("d-none")) detailsBar.classList.toggle("d-none")
+        const isOpen = drawerEl.classList.contains("show");
+        const isSameWord = currentlySelectedId === word.dataset.id;
 
-        const existingSelection = document.getElementsByClassName("selected")[0]
-        if (existingSelection) existingSelection.classList.toggle("selected");
+        if (isOpen && isSameWord) {
+            drawer.hide();
+            word.classList.remove("selected");
+            currentlySelectedId = null;
+            return;
+        }
 
-        word.classList.toggle("selected")
+        document.querySelector(".selected")?.classList.remove("selected");
+        word.classList.add("selected");
+
         selectedWord.innerText = word.dataset.text;
         lemmaInput.value = word.dataset.lemma;
         grammarInput.value = word.dataset.grammar;
         greekInput.value = word.dataset.greek;
         armenianInput.value = word.dataset.armenian;
         englishInput.value = word.dataset.english;
-        currentlySelectedId = word.dataset.id
-    })
+        currentlySelectedId = word.dataset.id;
+
+        drawer.show();
+    });
 
     word.addEventListener("mouseenter", () => {
         if (activeTooltip) {
@@ -63,7 +72,3 @@ for (let word of words) {
         }
     });
 }
-
-document.getElementById("closeDetailsBtn").addEventListener("click", () => {
-    detailsBar.classList.add("d-none")
-})

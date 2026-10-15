@@ -49,7 +49,7 @@ def initialize_extensions(app):
     # Flask-Admin
     admin.init_app(app)
     admin.add_view(BookView(Book, db.session, name="წიგნი"))
-    admin.add_view(ParagraphView(Paragraph, db.session, name="პარაგრაფი"))
+    admin.add_view(ParagraphView(Paragraph, db.session, name="მუხლი"))
     admin.add_view(UserView(User, db.session, name="მომხმარებელი"))
 
     # Flask-Login

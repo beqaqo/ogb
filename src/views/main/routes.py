@@ -32,12 +32,24 @@ def search():
         query = Paragraph.query
 
         if q_word:
-            query = query.filter(Paragraph.text.ilike(f'%{q_word}%'))
-
-        if q_translation:
-            query = query.filter(Paragraph.greek_text.ilike(f'%{q_translation}%'))
+            query = query.filter(
+                or_(
+                    Paragraph.text.ilike(f"%{q_word}%"),
+                    Paragraph.greek_text.ilike(f"%{q_word}%"),
+                )
+            )
 
         word_conditions = []
+        if q_translation:
+            pattern = f"%{q_translation}%"
+            word_conditions.append(
+                or_(
+                    Word.greek_text.ilike(pattern),
+                    Word.armenian_text.ilike(pattern),
+                    Word.english_text.ilike(pattern),
+                )
+            )
+
         if q_lemma:
             word_conditions.append(Word.lemma.ilike(f'%{q_lemma}%'))
         if q_grammar:
@@ -50,7 +62,7 @@ def search():
 
     return render_template("main/search_results.html", results=results, query=q_word)
 
-@main_bp.route('/book')
+@main_bp.route("/book")
 @main_bp.route("/book/<int:book_id>")
 @main_bp.route("/book/<int:book_id>/<int:chapter_number>")
 @main_bp.route("/book/<int:book_id>/<int:chapter_number>/<int:paragraph_index>")
@@ -98,13 +110,17 @@ def export_xml(book_id):
             notes_el = SubElement(paragraph_el, "notes")
             for note in paragraph.notes:
                 note_attrs = {"text": note.text}
-                if note.color: note_attrs["color"] = note.color
+                if note.color:
+                    note_attrs["color"] = note.color
                 SubElement(notes_el, "note", note_attrs)
 
             words_el = SubElement(paragraph_el, "words")
 
             for word in sorted(paragraph.words, key=lambda w: w.position):
-                SubElement(words_el,"word",{
+                SubElement(
+                    words_el,
+                    "word",
+                    {
                         "index": str(word.position),
                         "content": word.text or "",
                         "lemma": word.lemma or "",
@@ -115,25 +131,38 @@ def export_xml(book_id):
                     },
                 )
 
-
-    xml_bytes = minidom.parseString(tostring(root, encoding="utf-8")).toprettyxml(indent="\t", encoding="utf-8")
+    xml_bytes = minidom.parseString(tostring(root, encoding="utf-8")).toprettyxml(
+        indent="\t", encoding="utf-8"
+    )
     xml_string = xml_bytes.decode("utf-8")
     buffer = BytesIO(xml_string.encode("utf-8"))
-    return send_file(buffer, mimetype="application/xml", as_attachment=True, download_name=f"{book.title}.xml")
+    return send_file(
+        buffer,
+        mimetype="application/xml",
+        as_attachment=True,
+        download_name=f"{book.title}.xml",
+    )
 
-@main_bp.route('/word/<int:word_id>', methods=['GET', 'POST'])
+
+@main_bp.route("/word/<int:word_id>", methods=["GET", "POST"])
 def tagger(word_id):
     if not current_user.is_authenticated:
         return "Unauthorized", 401
 
     word = Word.query.get(word_id)
     if request.method == "GET":
-        similar_word = Word.query.filter(or_(Word.text == word.text, Word.lemma == word.lemma),
-                                          Word.greek_text != None,
-                                          Word.english_text != None,
-                                          Word.armenian_text != None,
-                                          Word.lemma != None,
-                                          Word.grammar != None).order_by(Word.id.desc()).first()
+        similar_word = (
+            Word.query.filter(
+                or_(Word.text == word.text, Word.lemma == word.lemma),
+                Word.greek_text != None,
+                Word.english_text != None,
+                Word.armenian_text != None,
+                Word.lemma != None,
+                Word.grammar != None,
+            )
+            .order_by(Word.id.desc())
+            .first()
+        )
 
         if similar_word is None:
             return "Similar word not found", 404
@@ -148,20 +177,30 @@ def tagger(word_id):
         return response
 
     elif request.method == "POST":
-        word.lemma = request.json['lemma'] if request.json['lemma'] != "None" else None
-        word.greek_text = request.json['greek'] if request.json['greek'] != "None" else None
-        word.english_text = request.json['english'] if request.json['english'] != "None" else None
-        word.armenian_text = request.json['armenian'] if request.json['armenian'] != "None" else None
-        word.grammar = request.json['grammar'] if request.json['grammar'] != "None" else None
+        word.lemma = request.json["lemma"] if request.json["lemma"] != "None" else None
+        word.greek_text = (
+            request.json["greek"] if request.json["greek"] != "None" else None
+        )
+        word.english_text = (
+            request.json["english"] if request.json["english"] != "None" else None
+        )
+        word.armenian_text = (
+            request.json["armenian"] if request.json["armenian"] != "None" else None
+        )
+        word.grammar = (
+            request.json["grammar"] if request.json["grammar"] != "None" else None
+        )
         word.save()
         return "Success", 200
 
     return "Method not allowed", 405
 
-@main_bp.route('/about')
+
+@main_bp.route("/about")
 def about():
     return render_template("main/about.html")
 
-@main_bp.route('/methodology')
+
+@main_bp.route("/methodology")
 def methodology():
     return render_template("main/methodology.html")

@@ -1,32 +1,32 @@
 {% extends "base.html" %}
+{% from "macros.html" import offcanvas_word with context%}
 
 {% block body %}
-<div class="container mt-3">
+<div class="container-fluid mt-3">
     <div class="row">
-        <aside class="col-12 col-lg-3 mb-4">
+        <aside class="col-12 col-lg-3 mb-4" style="z-index: 1;">
             <div class="card border border-primary-muted rounded bg-secondary-custom-light shadow-sm sticky-lg-top"
                 style="top: 1rem;">
                 <div class="card-body">
+                    <h5 class="mb-3">ფილტრი</h5>
                     <form role="search" method="GET" action="{{ url_for('main.search') }}">
                         <div class="mb-3">
-                            <label for="q_word" class="form-label small mb-1">გრამატიკული ფორმა</label>
                             <input id="q_word" class="form-control-custom" type="search" name="q_word"
-                                value="{{ request.args.get('q_word', '') }}" />
+                                value="{{ request.args.get('q_word', '') }}"
+                                placeholder="ტექსტით, სიტყვით ან გრამატიკული ფორმით ძიება" />
                         </div>
                         <div class="mb-3">
-                            <label for="q_lemma" class="form-label small mb-1">ლემა</label>
                             <input id="q_lemma" class="form-control-custom" type="search" name="q_lemma"
-                                value="{{ request.args.get('q_lemma', '') }}" />
+                                value="{{ request.args.get('q_lemma', '') }}" placeholder="ლემით ძიება" />
                         </div>
                         <div class="mb-3">
-                            <label for="q_grammar" class="form-label small mb-1">მორფოლოგიური თეგი</label>
                             <input id="q_grammar" class="form-control-custom" type="search" name="q_grammar"
-                                value="{{ request.args.get('q_grammar', '') }}" />
+                                value="{{ request.args.get('q_grammar', '') }}"
+                                placeholder="მორფოლოგიური თეგით ძიება" />
                         </div>
                         <div class="mb-3">
-                            <label for="q_translation" class="form-label small mb-1">თარგმანი</label>
                             <input id="q_translation" class="form-control-custom" type="search" name="q_translation"
-                                value="{{ request.args.get('q_translation', '') }}" />
+                                value="{{ request.args.get('q_translation', '') }}" placeholder="თარგმანებით ძიება" />
                         </div>
                         <button class="btn btn-primary-custom w-100" type="submit">ძიება</button>
                     </form>
@@ -52,26 +52,52 @@
                 <div class="col-md-10 mb-4">
                     <div class="card h-100 shadow-sm">
                         <div class="card-body">
+                            {% set query_words = query.split() %}
+
                             <h6 class="card-subtitle mb-3 text-primary-custom">
                                 <strong>{{ paragraph.book.title }}</strong> -
-                                თავი {{ paragraph.chapter_number }}, პარაგრაფი {{ paragraph.index }}
+                                თავი {{ paragraph.chapter_number }}, მუხლი {{ paragraph.index }}
                             </h6>
 
                             <p class="card-text small">
-                                {% for match in paragraph.text.split() %}
-                                {% if query and query.lower() in match.lower() %}
-                                <mark>{{ match }}</mark>
+                                {% set ns = namespace(loop_index=-1 ) %}
+                                {% for word in paragraph.text.split() %}
+                                {% set is_punctuation = utils.is_punctuation_token(word) %}
+                                {% if not is_punctuation %}
+                                {% set ns.loop_index = ns.loop_index + 1 %}
+                                {% set word_details = paragraph.words[ns.loop_index] %}
+                                {% set untaggedClass = "is-untagged" if word_details.is_untagged() and
+                                current_user.is_authenticated else "" %}
+                                <span class="paragraph-word {{ untaggedClass }}" data-id="{{ word_details.id }}"
+                                    data-text="{{ word_details.text }}" data-lemma="{{word_details.lemma }}"
+                                    data-grammar="{{ word_details.grammar }}" data-greek="{{ word_details.greek_text }}"
+                                    data-english="{{ word_details.english_text }}"
+                                    data-armenian="{{ word_details.armenian_text }}" data-bs-toggle="drawer">
+                                    {% if query_words and word in query_words %}
+                                    <mark>{{ word }}</mark>
+                                    {% else %}
+                                    {{ word }}
+                                    {% endif %}
+                                    {% if not loop.last %} {% endif %}
+                                </span>
                                 {% else %}
-                                {{ match }}
+                                <span>
+                                    {{ word }}
+                                </span>
                                 {% endif %}
-                                {% if not loop.last %} {% endif %}
                                 {% endfor %}
                             </p>
 
                             {% if paragraph.greek_text %}
                             <p class="card-text small text-muted">
-                                <em>{{ paragraph.greek_text[:100] }}
-                                    {% if paragraph.greek_text|length > 100 %}...{% endif %}</em>
+                                {% for word in paragraph.greek_text.split() %}
+                                {% if query_words and word in query_words %}
+                                <mark>{{ word }}</mark>
+                                {% else %}
+                                {{ word }}
+                                {% endif %}
+                                {% if not loop.last %} {% endif %}
+                                {% endfor %}
                             </p>
                             {% endif %}
                         </div>
@@ -92,6 +118,14 @@
             {% endif %}
         </main>
 
+        {{ offcanvas_word() }}
     </div>
 </div>
+{% endblock %}
+
+{% block script %}
+<script src="/static/js/inspect_word.js"></script>
+{% if current_user.is_authenticated %}
+<script src="/static/js/word_tagger.js"></script>
+{% endif %}
 {% endblock %}
