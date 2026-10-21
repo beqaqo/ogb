@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import offcanvas_word with context%}
+{% from "macros.html" import offcanvas_word, paragraph_words with context%}
 
 {% block body %}
 <div class="container-fluid mt-3">
@@ -12,17 +12,19 @@
                     <form role="search" method="GET" action="{{ url_for('main.search') }}">
                         <div class="mb-3">
                             <input id="q_word" class="form-control-custom" type="search" name="q_word"
-                                value="{{ request.args.get('q_word', '') }}"
-                                placeholder="ტექსტით ან სიტყვით ძიება" />
+                                value="{{ request.args.get('q_word', '') }}" placeholder="ტექსტით ან სიტყვით ძიება" />
                         </div>
                         <div class="mb-3">
                             <input id="q_lemma" class="form-control-custom" type="search" name="q_lemma"
                                 value="{{ request.args.get('q_lemma', '') }}" placeholder="ლემით ძიება" />
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3 position-relative" id="grammar-picker">
                             <input id="q_grammar" class="form-control-custom" type="search" name="q_grammar"
-                                value="{{ request.args.get('q_grammar', '') }}"
+                                autocomplete="off" value="{{ request.args.get('q_grammar', '') }}"
                                 placeholder="მორფოლოგიური თეგით ძიება" />
+
+                            <div id="grammar-options" class="list-group position-absolute w-100 shadow-sm d-none"
+                                style="max-height: 260px; overflow-y: auto; z-index: 1050;"></div>
                         </div>
                         <div class="mb-3">
                             <input id="q_translation" class="form-control-custom" type="search" name="q_translation"
@@ -41,9 +43,17 @@
             {% if results is none %}
             <p class="text-muted">გთხოვთ მიუთითოთ საძიებო ტექსტი.</p>
             {% else %}
-            <p class="text-muted mb-4">
-                ნაპოვნია <strong>{{ results|length }}</strong> შედეგი
-            </p>
+            <div class="col-md-10 d-flex justify-content-between align-items-center mb-4">
+                <p class="text-muted mb-0">
+                    ნაპოვნია <strong>{{ results|length }}</strong> შედეგი
+                </p>
+                {% if results %}
+                <a href="{{ url_for('main.export_search', **request.args.to_dict()) }}"
+                    class="btn btn-sm btn-primary-custom me-2">
+                    Excel-ში გადმოწერა ⬇
+                </a>
+                {% endif %}
+            </div>
             {% endif %}
 
             {% if results %}
@@ -60,34 +70,8 @@
                             </h6>
 
                             <p class="card-text small">
-                                {% set ns = namespace(loop_index=-1 ) %}
-                                {% for word in paragraph.text.split() %}
-                                {% set is_punctuation = utils.is_punctuation_token(word) %}
-                                {% if not is_punctuation %}
-                                {% set ns.loop_index = ns.loop_index + 1 %}
-                                {% set word_details = paragraph.words[ns.loop_index] %}
-                                {% set untaggedClass = "is-untagged" if word_details.is_untagged() and
-                                current_user.is_authenticated else "" %}
-                                <span class="paragraph-word {{ untaggedClass }}" data-id="{{ word_details.id }}"
-                                    data-text="{{ word_details.text }}" data-lemma="{{word_details.lemma }}"
-                                    data-grammar="{{ word_details.grammar }}" data-greek="{{ word_details.greek_text }}"
-                                    data-english="{{ word_details.english_text }}"
-                                    data-armenian="{{ word_details.armenian_text }}" data-bs-toggle="drawer">
-                                    {% if query_words and word in query_words %}
-                                    <mark>{{ word }}</mark>
-                                    {% else %}
-                                    {{ word }}
-                                    {% endif %}
-                                    {% if not loop.last %} {% endif %}
-                                </span>
-                                {% else %}
-                                <span>
-                                    {{ word }}
-                                </span>
-                                {% endif %}
-                                {% endfor %}
+                                {{ paragraph_words(paragraph, match=word_match) }}
                             </p>
-
                             {% if paragraph.greek_text %}
                             <p class="card-text small text-muted">
                                 {% for word in paragraph.greek_text.split() %}
@@ -124,6 +108,8 @@
 {% endblock %}
 
 {% block script %}
+<script id="grammar-data" type="application/json">{{ grammar_list|tojson }}</script>
+<script src="/static/js/grammar_picker.js"></script>
 <script src="/static/js/inspect_word.js"></script>
 {% if current_user.is_authenticated %}
 <script src="/static/js/word_tagger.js"></script>

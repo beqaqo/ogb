@@ -62,6 +62,9 @@ a {
 
 .table-secondary-custom td, .table-secondary-custom th {
   background-color: #f8f3ea;
+}
+
+.table-border-custom {
   border: 1px solid #ede0cc;
 }
 

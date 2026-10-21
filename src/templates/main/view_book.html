@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import offcanvas_word with context %}
+{% from "macros.html" import offcanvas_word, paragraph_words with context %}
 
 {% block body %}
 
@@ -32,7 +32,7 @@
         {% endfor %}
     </div>
 
-    <div class="col-9">
+    <div class="col-10">
         <div class="row g-0">
             {% set has_details = book.additional_details != '' %}
             <div class="accordion accordion-flush" id="bookDetails">
@@ -74,56 +74,36 @@
             </div>
         </div>
         <div class="row g-0">
-            <table class="table table-secondary-custom table-bordered">
-                <div class="col ms-3 px-4 border-start border-white border-primary-muted">
+            <table class="table table-borderless table-secondary-custom" style="table-layout: fixed;">
+                <colgroup>
+                    <col style="width: 50%;">
+                    <col style="width: 50%;">
+                </colgroup>
+                <tbody>
+
                     {% for paragraph in paragraphs %}
+                    {% set paragraph_number = paragraph.chapter_number ~ '.' ~ paragraph.index %}
                     <tr>
                         <td>
-                            <p class="m-0"><b>{{ paragraph.index }}.</b>
-                                {% set ns = namespace(loop_index=-1) %}
-                                {% for word in paragraph.text.split() %}
-                                {% set is_punctuation = utils.is_punctuation_token(word) %}
-                                {% if not is_punctuation %}
-                                {% set ns.loop_index = ns.loop_index + 1 %}
-                                {% set word_details = paragraph.words[ns.loop_index] %}
-                                {% set untaggedClass = "is-untagged" if word_details.is_untagged() and
-                                current_user.is_authenticated
-                                else "" %}
-                                <span class="paragraph-word {{ untaggedClass }}" 
-                                    data-id="{{ word_details.id }}"
-                                    data-text="{{ word_details.text }}" 
-                                    data-lemma="{{ word_details.lemma }}"
-                                    data-grammar="{{ word_details.grammar }}" 
-                                    data-greek="{{ word_details.greek_text }}"
-                                    data-english="{{ word_details.english_text }}"
-                                    data-armenian="{{ word_details.armenian_text }}">
-                                    {{ word }}
-                                </span>
-                                {% else %}
-                                <span>
-                                    {{ word }}
-                                </span>
-                                {% endif %}
-                                {% endfor %}
+                            <p class="m-0"><b>{{ paragraph_number }}  </b>
+                                {{ paragraph_words(paragraph) }}
                             </p>
                             {% for note in paragraph.notes%}
                             <p class="small text-muted mb-0 mt-1">
-                                — {{ note.text }}
+                                {{ paragraph_number }} {{ note.text }}
                             </p>
                             {% endfor %}
                         </td>
                         <td>
-                            <p class="mb-0"><b class="text-primary-dark-custom">{{ paragraph.index }}. </b>{{
+                            <p class="mb-0"><b>{{ paragraph_number }}  </b>{{
                                 paragraph.greek_text }}
                             </p>
                         </td>
                     </tr>
                     {% endfor %}
-                </div>
-
+                </tbody>
             </table>
         </div>
-
     </div>
     {{ offcanvas_word() }}
 </div>

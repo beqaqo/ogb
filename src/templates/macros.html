@@ -61,3 +61,27 @@
         </div>
     </div>
 {% endmacro %}
+
+{% macro paragraph_words(paragraph, match=none) %}
+{% set ns = namespace(i=-1) %}
+{% for word in paragraph.text.split() %}
+    {% if not utils.is_punctuation_token(word) %}
+        {% set ns.i = ns.i + 1 %}
+        {% set w = paragraph.words[ns.i] %}
+        {% set untagged = "is-untagged" if w.is_untagged() and current_user.is_authenticated else "" %}
+        <span class="paragraph-word {{ untagged }}"
+              data-id="{{ w.id }}"
+              data-text="{{ w.text }}"
+              data-lemma="{{ w.lemma }}"
+              data-grammar="{{ w.grammar }}"
+              data-greek="{{ w.greek_text }}"
+              data-english="{{ w.english_text }}"
+              data-armenian="{{ w.armenian_text }}"
+              {% if drawer %}data-bs-toggle="drawer"{% endif %}>
+            {%- if match and match(word, w) %}<mark>{{ word }}</mark>{% else %}{{ word }}{% endif -%}
+        </span>
+    {% else %}
+        <span>{{ word }}</span>
+    {% endif %}
+{% endfor %}
+{% endmacro %}

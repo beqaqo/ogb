@@ -2,12 +2,14 @@ from collections import defaultdict
 from io import BytesIO
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
+from openpyxl import Workbook
 
 from flask import Blueprint, render_template, request, send_file
 from flask_login import current_user
 from sqlalchemy import or_
 
 from src.models import Book, Paragraph, Word
+from src.utils import make_word_matcher
 
 main_bp = Blueprint('main', __name__)
 
@@ -19,48 +21,102 @@ def index():
 from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 
+def build_search_query(args):
+    q_word = args.get('q_word', '').strip()
+    q_lemma = args.get('q_lemma', '').strip()
+    q_translation = args.get('q_translation', '').strip()
+    q_grammar = args.get('q_grammar', '').strip()
+
+    if not any([q_word, q_lemma, q_translation, q_grammar]):
+        return None, q_word, q_lemma, q_translation, q_grammar
+
+    query = Paragraph.query
+
+    if q_word:
+        query = query.filter(
+            or_(
+                Paragraph.text.ilike(f"%{q_word}%"),
+                Paragraph.greek_text.ilike(f"%{q_word}%"),
+            )
+        )
+
+    word_conditions = []
+    if q_translation:
+        pattern = f"%{q_translation}%"
+        word_conditions.append(
+            or_(
+                Word.greek_text.ilike(pattern),
+                Word.armenian_text.ilike(pattern),
+                Word.english_text.ilike(pattern),
+            )
+        )
+    if q_lemma:
+        word_conditions.append(Word.lemma.ilike(f"%{q_lemma}%"))
+    if q_grammar:
+        word_conditions.append(Word.grammar.ilike(f"{q_grammar}%"))
+
+    if word_conditions:
+        query = query.filter(Paragraph.words.any(and_(*word_conditions)))
+
+    results = query.options(selectinload(Paragraph.words)).all()
+    return results, q_word, q_lemma, q_translation, q_grammar
+
 @main_bp.route('/search')
 def search():
-    q_word = request.args.get('q_word', '').strip()
-    q_lemma = request.args.get('q_lemma', '').strip()
-    q_translation = request.args.get('q_translation', '').strip()
-    q_grammar = request.args.get('q_grammar', '').strip()
+    results, q_word, q_lemma, q_translation, q_grammar = build_search_query(request.args)
 
-    results = None
+    grammar_list = sorted(
+        row.grammar
+        for row in Word.query.with_entities(Word.grammar).distinct()
+        if row.grammar
+    )
 
-    if any([q_word, q_lemma, q_translation, q_grammar]):
-        query = Paragraph.query
+    return render_template(
+        "main/search_results.html",
+        results=results,
+        query=q_word,
+        grammar_list=grammar_list,
+        word_match=make_word_matcher(q_word, q_lemma, q_translation, q_grammar),
+    )
 
-        if q_word:
-            query = query.filter(
-                or_(
-                    Paragraph.text.ilike(f"%{q_word}%"),
-                    Paragraph.greek_text.ilike(f"%{q_word}%"),
-                )
-            )
 
-        word_conditions = []
-        if q_translation:
-            pattern = f"%{q_translation}%"
-            word_conditions.append(
-                or_(
-                    Word.greek_text.ilike(pattern),
-                    Word.armenian_text.ilike(pattern),
-                    Word.english_text.ilike(pattern),
-                )
-            )
+@main_bp.route('/search/export')
+def export_search():
+    results, *_ = build_search_query(request.args)
+    if not results:
+        abort(404)
 
-        if q_lemma:
-            word_conditions.append(Word.lemma.ilike(f'%{q_lemma}%'))
-        if q_grammar:
-            word_conditions.append(Word.grammar.ilike(f'%{q_grammar}%'))
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Search results"
+    ws.append(["Book", "Chapter", "Paragraph", "Text", "Greek text"])
 
-        if word_conditions:
-            query = query.filter(Paragraph.words.any(and_(*word_conditions)))
+    for p in results:
+        ws.append([
+            p.book.title,
+            p.chapter_number,
+            p.index,
+            p.text,
+            p.greek_text or "",
+        ])
 
-        results = query.options(selectinload(Paragraph.words)).all()
+    ws.append(["search link: ", request.url.replace('/export', '') ])
 
-    return render_template("main/search_results.html", results=results, query=q_word)
+    # basic formatting
+    ws.freeze_panes = "A2"
+    for col, width in zip("ABCDE", (30, 10, 10, 100, 100)):
+        ws.column_dimensions[col].width = width
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name="search_results.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 @main_bp.route("/book")
 @main_bp.route("/book/<int:book_id>")

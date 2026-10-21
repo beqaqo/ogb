@@ -49,3 +49,23 @@ def load_svg(name, width=None, height=None, css_class=None):
     if attrs:
         svg_content = re.sub(r'<svg\b', f'<svg{attrs}', svg_content, count=1)
     return svg_content
+
+
+def make_word_matcher(q_word, q_lemma, q_translation, q_grammar):
+    q_word, q_lemma = q_word.lower(), q_lemma.lower()
+    q_translation, q_grammar = q_translation.lower(), q_grammar.lower()
+
+    def contains(value, q):
+        return bool(q and value and q in value.lower())
+
+    def match(token, word):
+        """token = the text as displayed, word = the Word row"""
+        return (
+            contains(token, q_word)
+            or contains(word.lemma, q_lemma)
+            or bool(q_grammar and word.grammar and word.grammar.lower().startswith(q_grammar))
+            or any(contains(t, q_translation)
+                for t in (word.greek_text, word.armenian_text, word.english_text))
+        )
+
+    return match
