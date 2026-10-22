@@ -3,6 +3,7 @@ from io import BytesIO
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 from openpyxl import Workbook
+from openpyxl.styles import Font
 
 from flask import Blueprint, render_template, request, send_file
 from flask_login import current_user
@@ -83,13 +84,21 @@ def search():
 @main_bp.route('/search/export')
 def export_search():
     results, *_ = build_search_query(request.args)
+    results = list(results)
     if not results:
         abort(404)
 
     wb = Workbook()
+
+    #Sheet 1: search results
     ws = wb.active
     ws.title = "Search results"
+
+    ws.append(["search link: ", request.url.replace('/export', '')])
+    ws.append([])
     ws.append(["Book", "Chapter", "Paragraph", "Text", "Greek text"])
+    for cell in ws[3]:
+        cell.font = Font(bold=True)
 
     for p in results:
         ws.append([
@@ -100,13 +109,57 @@ def export_search():
             p.greek_text or "",
         ])
 
-    ws.append(["search link: ", request.url.replace('/export', '') ])
-
-    # basic formatting
-    ws.freeze_panes = "A2"
+    ws.freeze_panes = "A4"  # keep the header row (row 3) visible
     for col, width in zip("ABCDE", (30, 10, 10, 100, 100)):
         ws.column_dimensions[col].width = width
 
+    #Sheet 2: words
+    ws_words = wb.create_sheet("Words")
+    ws_words.append([
+        "Book", "Chapter", "Paragraph",
+        "Position", "Text", "Greek text", "Armenian text", "English text",
+        "Lemma", "Grammar",
+    ])
+    for cell in ws_words[1]:
+        cell.font = Font(bold=True)
+
+    # Fetch all words for the paragraphs in the results (chunked)
+    paragraph_ids = [p.id for p in results]
+    words_by_paragraph = defaultdict(list)
+    CHUNK = 500
+    for i in range(0, len(paragraph_ids), CHUNK):
+        chunk = paragraph_ids[i:i + CHUNK]
+        words = (
+            Word.query
+            .filter(Word.paragraph_id.in_(chunk))
+            .order_by(Word.paragraph_id, Word.position)
+            .all()
+        )
+        for w in words:
+            words_by_paragraph[w.paragraph_id].append(w)
+
+    # Write rows in the same order as the search results
+    for p in results:
+        for w in words_by_paragraph.get(p.id, []):
+            ws_words.append([
+                p.book.title,
+                p.chapter_number,
+                p.index,
+                w.position,
+                w.text,
+                w.greek_text or "",
+                w.armenian_text or "",
+                w.english_text or "",
+                w.lemma or "",
+                w.grammar or "",
+            ])
+
+    ws_words.freeze_panes = "A2"
+    for col, width in zip("ABCDEFGHIJ", (30, 10, 10, 10, 20, 20, 20, 20, 20, 25)):
+        ws_words.column_dimensions[col].width = width
+    ws_words.auto_filter.ref = ws_words.dimensions  # filter dropdowns on the header
+
+    #Output
     buf = BytesIO()
     wb.save(buf)
     buf.seek(0)
