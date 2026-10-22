@@ -50,7 +50,7 @@
                 {% if results %}
                 <a href="{{ url_for('main.export_search', **request.args.to_dict()) }}"
                     class="btn btn-sm btn-primary-custom me-2">
-                    Excel ⬇
+                    Excel {{ utils.load_svg('download.svg', 17, 17) | safe }}
                 </a>
                 {% endif %}
             </div>
