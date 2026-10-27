@@ -3,6 +3,7 @@ from flask_admin.theme import Bootstrap4Theme
 
 from src.admin_views.book import BookView
 from src.admin_views.paragraph import ParagraphView
+from src.admin_views.word import WordView
 from src.admin_views.user import UserView
 from src.admin_views.base import SecureIndexView
 

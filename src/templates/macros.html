@@ -5,7 +5,7 @@
 {% endmacro %}
 
 {% macro offcanvas_word() %}
-<div class="offcanvas offcanvas-end word-details" tabindex="-1" id="wordDetailsDrawer"
+<div class="offcanvas offcanvas-end word-details w-25" tabindex="-1" id="wordDetailsDrawer"
         aria-labelledby="wordDetailsLabel" data-bs-backdrop="false" data-bs-scroll="true">
 
         <div class="offcanvas-header align-items-start border-bottom border-primary-muted">
@@ -13,7 +13,7 @@
                 <h5 class="offcanvas-title" id="wordDetailsLabel">სიტყვის დეტალები</h5>
                 <span id="selectedWord">სიტყვა</span>
             </div>
-            <button class="btn px-2 py-1 btn-close-details" id="closeDetailsBtn" data-bs-dismiss="offcanvas"
+            <button class="btn px-2 py-1 btn-close-details position-absolute top-0 end-0 mt-3 me-3" id="closeDetailsBtn" data-bs-dismiss="offcanvas"
                 aria-label="Close">
                 {{ utils.load_svg("crossmark.svg", 16, 16) | safe }}
             </button>
@@ -24,31 +24,31 @@
                 {{ utils.load_svg("book.svg", 11, 11) | safe }}
                 ლემა
             </label>
-            <input class="form-control-custom mt-1 mb-3" name="lemma" id="lemma">
+            <input class="form-control-custom mt-1 mb-3" name="lemma" id="lemma" {% if not current_user.is_authenticated %}disabled readonly{% endif %}>
 
             <label for="grammarTags" class="text-primary-custom">
                 {{ utils.load_svg("tag.svg", 11, 11) | safe }}
                 მორფოლოგიური თეგები
             </label>
-            <input class="form-control-custom mt-1 mb-3" name="grammarTags" id="grammarTags">
+            <input class="form-control-custom mt-1 mb-3" name="grammarTags" id="grammarTags" {% if not current_user.is_authenticated %}disabled readonly{% endif %}>
 
             <label for="greekText" class="text-primary-custom">
                 {{ utils.load_svg("translate.svg", 11, 11) | safe }}
                 ბერძნული თარგმანი
             </label>
-            <input class="form-control-custom mt-1 mb-3" name="greekText" id="greekText">
+            <input class="form-control-custom mt-1 mb-3" name="greekText" id="greekText" {% if not current_user.is_authenticated %}disabled readonly{% endif %}>
 
             <label for="armenianText" class="text-primary-custom">
                 {{ utils.load_svg("translate.svg", 11, 11) | safe }}
                 სომხური თარგმანი
             </label>
-            <input class="form-control-custom mt-1 mb-3" name="armenianText" id="armenianText">
+            <input class="form-control-custom mt-1 mb-3" name="armenianText" id="armenianText" {% if not current_user.is_authenticated %}disabled readonly{% endif %}>
 
             <label for="georgianText" class="text-primary-custom">
                 {{ utils.load_svg("translate.svg", 11, 11) | safe }}
                 ინგლისური თარგმანი
             </label>
-            <input class="form-control-custom mt-1 mb-3" name="georgianText" id="georgianText">
+            <input class="form-control-custom mt-1 mb-3" name="georgianText" id="georgianText" {% if not current_user.is_authenticated %}disabled readonly{% endif %}>
 
             {% if current_user.is_authenticated %}
             <button type="button" id="autoFill" name="autoFill" class="btn btn-primary-custom">

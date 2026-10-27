@@ -1,6 +1,7 @@
 from flask_admin import AdminIndexView, expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
+from flask import redirect, url_for, request
 from sqlalchemy import or_
 
 from src.models.word import Word
@@ -11,6 +12,8 @@ class SecureModelView(ModelView):
         return current_user.is_authenticated
 
     def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('auth.login', next=request.url))
+
         if not self.is_accessible():
             return False
         return None
@@ -21,6 +24,8 @@ class SecureIndexView(AdminIndexView):
         return current_user.is_authenticated
 
     def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('auth.login', next=request.url))
+
         if not self.is_accessible():
             return False
         return None

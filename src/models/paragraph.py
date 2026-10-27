@@ -19,3 +19,5 @@ class Paragraph(BaseModel):
     notes = db.relationship('Note', back_populates='paragraph', lazy=True)
 
 
+    def __repr__(self):
+        return f"{self.book.title} {self.chapter_number}.{self.index}"

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, flash, redirect, url_for
+from flask import Blueprint, render_template, flash, redirect, url_for, request
 from flask_login import login_user, logout_user, login_required
 
 from src.views.auth.forms import LoginForm
@@ -14,6 +14,11 @@ def login():
         user = User.query.filter_by(username=form.email.data.lower()).first()
         if user and user.check_password(form.password.data):
             login_user(user)
+
+            next_url = request.args.get('next')
+            if next_url:
+                return redirect(next_url)
+
             return redirect(url_for('main.index'))
         else:
             flash("* ელფოსტა ან პაროლი არასწორია, გთხოვთ სცადოთ თავიდან")
