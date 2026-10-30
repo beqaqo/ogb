@@ -23,6 +23,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import selectinload
 
 def build_search_query(args):
+    q_book = args.get('q_book')
     q_word = args.get('q_word', '').strip()
     q_lemma = args.get('q_lemma', '').strip()
     q_translation = args.get('q_translation', '').strip()
@@ -32,6 +33,9 @@ def build_search_query(args):
         return None, q_word, q_lemma, q_translation, q_grammar
 
     query = Paragraph.query
+
+    if q_book:
+        query = query.filter(Paragraph.book.has(Book.title == q_book))
 
     if q_word:
         query = query.filter(
@@ -66,6 +70,8 @@ def build_search_query(args):
 def search():
     results, q_word, q_lemma, q_translation, q_grammar = build_search_query(request.args)
 
+    books = Book.query.all()
+
     grammar_list = sorted(
         row.grammar
         for row in Word.query.with_entities(Word.grammar).distinct()
@@ -76,6 +82,7 @@ def search():
         "main/search_results.html",
         results=results,
         query=q_word,
+        books=books,
         grammar_list=grammar_list,
         word_match=make_word_matcher(q_word, q_lemma, q_translation, q_grammar),
     )

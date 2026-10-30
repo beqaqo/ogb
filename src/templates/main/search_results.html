@@ -11,6 +11,18 @@
                     <h5 class="mb-3">ფილტრი</h5>
                     <form role="search" method="GET" action="{{ url_for('main.search') }}">
                         <div class="mb-3">
+                            {% set book_name = request.args.get("q_book", "") %}
+                            <select id="q_book" class="form-control-custom" name="q_book">
+                                <option value="">ყველა წიგნი</option>
+
+                                {% for book in books %}
+                                <option value="{{ book.title }}" {% if book.title==book_name %}selected{% endif %}>
+                                    {{ book.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <input id="q_word" class="form-control-custom" type="search" name="q_word"
                                 value="{{ request.args.get('q_word', '') }}" placeholder="ტექსტით ან სიტყვით ძიება" />
                         </div>
